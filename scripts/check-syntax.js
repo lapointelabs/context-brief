@@ -1,9 +1,14 @@
-import { readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runProcess } from "../src/util.js";
+import { VERSION } from "../src/version.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
+if (packageJson.version !== VERSION) {
+  throw new Error(`Version mismatch: package.json has ${packageJson.version}, src/version.js has ${VERSION}.`);
+}
 const directories = ["src", "bin", "scripts", "test"];
 const files = [];
 for (const directory of directories) {

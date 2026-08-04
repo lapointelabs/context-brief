@@ -1,4 +1,5 @@
 import { contextPath } from "./project.js";
+import { detectProject } from "./detect.js";
 import { taskScaffold } from "./tasks.js";
 import { exists, isoNow, slugify, writeJson } from "./util.js";
 
@@ -32,10 +33,20 @@ export async function importGithubTask(project, reference, options = {}) {
   const id = options.id || slugify(`gh-${number}-${issue.title}`).slice(0, 80);
   const filePath = contextPath(project, "tasks", `${id}.json`);
   if (await exists(filePath) && !options.force) throw new Error(`Task ${id} already exists. Use --force to replace it.`);
-  const task = taskScaffold(id, issue.title);
+  const detection = options.detection || await detectProject(project.root);
+  const task = taskScaffold(id, issue.title, {
+    verificationCommands: detection.verificationCommands,
+    entryPoints: detection.entryPoints
+  });
   task.outcome = issue.title;
   task.why = issue.body || "";
   task.scope.in = [`Resolve GitHub issue ${repository}#${number}.`];
+  task.behavior.expected = [issue.title];
+  task.acceptance = [{
+    id: "AC-1",
+    criterion: issue.title,
+    verification: detection.verificationCommands.length ? "automated" : "manual"
+  }];
   task.source = { type: "github", reference: issue.html_url, importedAt: isoNow() };
   await writeJson(filePath, task);
   return { task, filePath };

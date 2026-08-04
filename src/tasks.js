@@ -1,9 +1,12 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import { detectProject } from "./detect.js";
 import { contextPath } from "./project.js";
 import { exists, isoNow, readJson, slugify, writeJson } from "./util.js";
 
-export function taskScaffold(id, title) {
+export function taskScaffold(id, title, options = {}) {
+  const verificationCommands = options.verificationCommands || [];
+  const entryPoints = options.entryPoints || [];
   return {
     $schema: "../schemas/task.schema.json",
     schemaVersion: 1,
@@ -14,14 +17,14 @@ export function taskScaffold(id, title) {
     why: "",
     behavior: { current: [], expected: [] },
     evidence: [],
-    context: { entryPoints: [], relatedPaths: [], contracts: [] },
+    context: { entryPoints, relatedPaths: [], contracts: [] },
     scope: { in: [], out: [] },
     constraints: [],
     protectedPaths: [],
     acceptance: [
       { id: "AC-1", criterion: "The observable outcome is satisfied.", verification: "manual" }
     ],
-    verification: { commands: [], manual: [] },
+    verification: { commands: verificationCommands, manual: [] },
     unknowns: [],
     delivery: {
       required: [
@@ -47,7 +50,11 @@ export async function createTask(project, id, title, options = {}) {
   if ((await exists(filePath)) && !options.force) {
     throw new Error(`Task ${id} already exists. Use --force to replace it.`);
   }
-  const task = taskScaffold(id, title || id.replaceAll("-", " "));
+  const detection = options.detection || await detectProject(project.root);
+  const task = taskScaffold(id, title || id.replaceAll("-", " "), {
+    verificationCommands: detection.verificationCommands,
+    entryPoints: detection.entryPoints
+  });
   await writeJson(filePath, task);
   return { task, filePath };
 }

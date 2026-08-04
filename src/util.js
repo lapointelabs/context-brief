@@ -109,6 +109,9 @@ export async function findProjectRoot(start = process.cwd()) {
 }
 
 export function parseArgs(args) {
+  const booleanFlags = new Set([
+    "apply", "continue", "force", "help", "json", "mcp", "no-gitignore", "refresh", "run", "stdout", "strict", "version", "yes"
+  ]);
   const positionals = [];
   const flags = {};
   for (let index = 0; index < args.length; index += 1) {
@@ -124,7 +127,7 @@ export function parseArgs(args) {
     const equals = item.indexOf("=");
     const key = item.slice(2, equals === -1 ? undefined : equals);
     let value = equals === -1 ? true : item.slice(equals + 1);
-    if (equals === -1 && args[index + 1] && !args[index + 1].startsWith("--")) {
+    if (equals === -1 && !booleanFlags.has(key) && args[index + 1] && !args[index + 1].startsWith("--")) {
       value = args[index + 1];
       index += 1;
     }

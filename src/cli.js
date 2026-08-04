@@ -1,22 +1,26 @@
 import path from "node:path";
 import { compileTask } from "./compiler.js";
+import { detectProject, formatDetection } from "./detect.js";
 import { formatDoctor, inspectProject } from "./doctor.js";
 import { hydrateTask } from "./discover.js";
 import { addEvidence } from "./evidence.js";
 import { importGithubTask } from "./importers.js";
+import { formatMcpResult, installMcp } from "./mcp-setup.js";
 import { serveMcp } from "./mcp.js";
+import { startExperience } from "./onboarding.js";
 import { initializeProject, loadProject } from "./project.js";
 import { inspectResult, scaffoldResult } from "./results.js";
 import { createTask, listTasks, loadTask } from "./tasks.js";
 import { flag, flagList, parseArgs } from "./util.js";
 import { verifyTask } from "./verify.js";
-
-const VERSION = "0.1.0";
+import { VERSION } from "./version.js";
 
 const HELP = `context-brief ${VERSION} — compile trustworthy context for coding agents
 
 Usage:
-  ctx init [directory] [--name NAME] [--force]
+  ctx init [directory] [--name NAME] [--force] [--no-gitignore]
+  ctx start [ID|github:OWNER/REPO#NUMBER] [--title TITLE] [--outcome TEXT]
+      [--target codex|claude|cursor|generic] [--yes] [--mcp]
   ctx task create ID [--title TITLE] [--force]
   ctx task import github:OWNER/REPO#NUMBER [--id ID] [--force]
   ctx task list
@@ -29,6 +33,8 @@ Usage:
   ctx verify TASK [--run] [--continue]
   ctx result scaffold TASK [--force]
   ctx result validate TASK [--json]
+  ctx mcp install [codex|claude|cursor] [--name NAME] [--force]
+  ctx mcp show [codex|claude|cursor]
   ctx status
   ctx serve
 
@@ -63,9 +69,41 @@ async function projectFrom(flags) {
 
 async function commandInit(positionals, flags) {
   const directory = path.resolve(positionals[1] || process.cwd());
-  const result = await initializeProject(directory, { name: flag(flags, "name"), force: Boolean(flag(flags, "force", false)) });
-  output(`Initialized ${relative(result.configPath)}.`);
-  output("Next: ctx task create <id> --title \"Observable outcome\"");
+  const result = await initializeProject(directory, {
+    name: flag(flags, "name"),
+    force: Boolean(flag(flags, "force", false)),
+    gitignore: !Boolean(flag(flags, "no-gitignore", false))
+  });
+  output(`${result.alreadyInitialized && !flag(flags, "force", false) ? "Already initialized; refreshed schemas in" : "Initialized"} ${relative(result.configPath)}.`);
+  output(formatDetection(result.detection).split("\n").map((line) => `  ${line}`).join("\n"));
+  if (result.gitignoreChanged) output("  Updated .gitignore for generated artifacts.");
+  output("Next: ctx start");
+}
+
+async function commandStart(positionals, flags) {
+  const start = path.resolve(String(flag(flags, "root", process.cwd())));
+  let project;
+  try {
+    project = await loadProject(start);
+  } catch (error) {
+    if (!error.message.includes("No .context/config.json found")) throw error;
+    const initialized = await initializeProject(start, { gitignore: !Boolean(flag(flags, "no-gitignore", false)) });
+    output(`Initialized ${relative(initialized.configPath, start)}.`);
+    project = await loadProject(start);
+  }
+  const detection = await detectProject(project.root);
+  output(formatDetection(detection).split("\n").map((line) => `  ${line}`).join("\n"));
+  const result = await startExperience(project, positionals[1], flags);
+  output("");
+  output(`${result.created ? "Created" : "Loaded"} task ${result.task.id}.`);
+  output(`  Task: ${relative(result.taskPath, project.metadataRoot)}`);
+  output(`  Indexed: ${result.compiled.manifest.selectedPaths.length} relevant paths`);
+  output(`  Validation: ${result.report.counts.error} errors, ${result.report.counts.warning} warnings`);
+  output(`  ${result.target}: ${relative(result.compiled.outputPath, project.metadataRoot)}`);
+  if (result.mcp) output(`  MCP: ${formatMcpResult(result.mcp, project.root).replaceAll("\n", "\n       ")}`);
+  output("");
+  output(`Ready. Hand the ${result.target} artifact to your agent, or run ctx mcp install ${result.target}.`);
+  if (result.task.verification.commands.length) output(`When implementation is complete: ctx verify ${result.task.id}, then rerun with --run.`);
 }
 
 async function commandTask(positionals, flags) {
@@ -188,6 +226,20 @@ async function commandResult(positionals, flags) {
   throw new Error(`Unknown result action: ${action}`);
 }
 
+async function commandMcp(positionals, flags) {
+  const action = required(positionals[1], "MCP action (show or install)");
+  if (!["show", "install"].includes(action)) throw new Error(`Unknown MCP action: ${action}`);
+  const project = await projectFrom(flags);
+  const detection = await detectProject(project.root);
+  const target = positionals[2] || detection.defaultTarget;
+  const result = await installMcp(project, target, {
+    apply: action === "install",
+    force: Boolean(flag(flags, "force", false)),
+    name: flag(flags, "name")
+  });
+  output(formatMcpResult(result, project.root));
+}
+
 async function commandStatus(flags) {
   const project = await projectFrom(flags);
   const tasks = await listTasks(project);
@@ -198,9 +250,10 @@ async function commandStatus(flags) {
 export async function run(args) {
   const { positionals, flags } = parseArgs(args);
   const command = positionals[0];
-  if (!command || flag(flags, "help", false) || command === "help") return output(HELP.trimEnd());
   if (flag(flags, "version", false) || command === "version") return output(VERSION);
+  if (!command || flag(flags, "help", false) || command === "help") return output(HELP.trimEnd());
   if (command === "init") return commandInit(positionals, flags);
+  if (command === "start") return commandStart(positionals, flags);
   if (command === "task") return commandTask(positionals, flags);
   if (command === "evidence") return commandEvidence(positionals, flags);
   if (command === "hydrate") return commandHydrate(positionals, flags);
@@ -208,7 +261,8 @@ export async function run(args) {
   if (command === "build") return commandBuild(positionals, flags);
   if (command === "verify") return commandVerify(positionals, flags);
   if (command === "result") return commandResult(positionals, flags);
+  if (command === "mcp") return commandMcp(positionals, flags);
   if (command === "status") return commandStatus(flags);
-  if (command === "serve" || command === "mcp") return serveMcp(await projectFrom(flags));
+  if (command === "serve") return serveMcp(await projectFrom(flags));
   throw new Error(`Unknown command: ${command}. Run ctx --help for usage.`);
 }

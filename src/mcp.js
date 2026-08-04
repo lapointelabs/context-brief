@@ -6,6 +6,7 @@ import { formatDoctor, inspectProject } from "./doctor.js";
 import { loadEvidence } from "./evidence.js";
 import { listTasks, loadTask } from "./tasks.js";
 import { exists } from "./util.js";
+import { VERSION } from "./version.js";
 
 async function listJson(directory) {
   if (!(await exists(directory))) return [];
@@ -111,7 +112,7 @@ async function dispatch(project, message) {
       result: {
         protocolVersion: params.protocolVersion || "2025-06-18",
         capabilities: { resources: { listChanged: false }, tools: { listChanged: false } },
-        serverInfo: { name: "context-brief", version: "0.1.0" }
+        serverInfo: { name: "context-brief", version: VERSION }
       }
     };
   }

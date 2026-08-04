@@ -62,6 +62,11 @@ async function fixture() {
   return root;
 }
 
+test("prints a concise version for installation smoke checks", async () => {
+  const result = await run(["--version"], packageRoot);
+  assert.match(result.stdout, /^0\.2\.0\n$/);
+});
+
 test("initializes a self-contained project with editor schemas", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "context-brief-init-"));
   await run(["init", ".", "--name", "sample"], root);
@@ -71,6 +76,58 @@ test("initializes a self-contained project with editor schemas", async () => {
   for (const schema of ["config", "task", "evidence", "result"]) {
     assert.equal(JSON.parse(await readFile(path.join(root, ".context", "schemas", `${schema}.schema.json`), "utf8")).$schema, "https://json-schema.org/draft/2020-12/schema");
   }
+});
+
+test("starts a useful task in one command with detected defaults", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "context-brief-start-"));
+  await runProcess("git", ["init", "-q"], { cwd: root });
+  await mkdir(path.join(root, "src"));
+  await writeFile(path.join(root, "src", "index.js"), "export const ready = true;\n");
+  await writeFile(path.join(root, "package.json"), JSON.stringify({
+    name: "onboarding-fixture",
+    main: "src/index.js",
+    scripts: { test: "node --test", lint: "node --check src/index.js" }
+  }, null, 2));
+
+  const started = await run([
+    "start", "ship-onboarding", "--title", "Ship polished onboarding",
+    "--outcome", "A new user produces a validated brief in one command.",
+    "--target", "generic", "--yes"
+  ], root);
+  assert.match(started.stdout, /Initialized \.context\/config\.json/);
+  assert.match(started.stdout, /Created task ship-onboarding/);
+  assert.match(started.stdout, /Ready\./);
+
+  const config = JSON.parse(await readFile(path.join(root, ".context", "config.json"), "utf8"));
+  assert.equal(config.project.name, "onboarding-fixture");
+  const task = JSON.parse(await readFile(path.join(root, ".context", "tasks", "ship-onboarding.json"), "utf8"));
+  assert.deepEqual(task.context.entryPoints, ["src/index.js"]);
+  assert.deepEqual(task.verification.commands.map((command) => command.run), ["npm run test", "npm run lint"]);
+  assert.equal(task.outcome, "A new user produces a validated brief in one command.");
+  assert.ok((await readFile(path.join(root, ".gitignore"), "utf8")).includes(".context/build/"));
+  assert.match(await readFile(path.join(root, ".context", "build", "ship-onboarding", "generic.md"), "utf8"), /Ship polished onboarding/);
+
+  const resumed = await run(["start", "ship-onboarding", "--target", "generic", "--yes"], root);
+  assert.match(resumed.stdout, /Loaded task ship-onboarding/);
+  const initialized = await run(["init"], root);
+  assert.match(initialized.stdout, /Already initialized; refreshed schemas/);
+  const ignored = (await readFile(path.join(root, ".gitignore"), "utf8")).split(/\r?\n/);
+  assert.equal(ignored.filter((line) => line === ".context/build/").length, 1);
+});
+
+test("previews MCP setup and safely merges Cursor project configuration", async () => {
+  const root = await fixture();
+  const preview = await run(["mcp", "show", "cursor"], root);
+  assert.match(preview.stdout, /Preview only/);
+  await assert.rejects(readFile(path.join(root, ".cursor", "mcp.json"), "utf8"), (error) => error.code === "ENOENT");
+  await mkdir(path.join(root, ".cursor"));
+  await writeFile(path.join(root, ".cursor", "mcp.json"), `${JSON.stringify({ mcpServers: { existing: { command: "existing" } } }, null, 2)}\n`);
+  const applied = await run(["mcp", "install", "cursor"], root);
+  assert.match(applied.stdout, /Configured context-brief-fixture/);
+  const config = JSON.parse(await readFile(path.join(root, ".cursor", "mcp.json"), "utf8"));
+  assert.equal(config.mcpServers.existing.command, "existing");
+  assert.equal(config.mcpServers["context-brief-fixture"].command, process.execPath);
+  assert.ok(config.mcpServers["context-brief-fixture"].args.includes("serve"));
 });
 
 test("hydrates, validates, compiles, verifies, and scaffolds a result", async () => {

@@ -1,6 +1,6 @@
 {
   "name": "@lapointelabs/context-brief",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A schema-backed context compiler for coding agents.",
   "type": "module",
   "bin": {
@@ -23,6 +23,7 @@
     "check": "node scripts/check-syntax.js",
     "test": "node --test",
     "test:cli": "node --test test/cli.test.js",
+    "release:check": "npm run check && npm test && npm pack --dry-run",
     "prepublishOnly": "npm run check && npm test"
   },
   "engines": {
@@ -44,5 +45,9 @@
     "url": "https://github.com/lapointelabs/context-brief/issues"
   },
   "homepage": "https://github.com/lapointelabs/context-brief#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "license": "MIT"
 }

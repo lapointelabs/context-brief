@@ -13,6 +13,14 @@ Context Brief treats context as a small compilation pipeline instead of an ever-
 
 ## Components
 
+### Onboarding orchestrator
+
+`ctx start` is the user-facing composition layer. It discovers or safely initializes the project, detects runtime and agent clients, creates or imports a task, supplies repository-derived entry points and verification commands, hydrates, validates, and compiles one selected target. Each underlying command remains available for automation and debugging, but users do not need to learn the pipeline before receiving a useful artifact.
+
+Initialization is idempotent: existing configuration and task data are preserved, bundled editor schemas are refreshed, and only missing generated-artifact entries are appended to `.gitignore`.
+
+MCP onboarding uses the installed Codex and Claude CLIs instead of generating their configuration formats directly. Cursor's CLI exposes management for servers configured in `.cursor/mcp.json` but no add command, so Context Brief performs an atomic merge into that project-local file while preserving unrelated servers.
+
 ### Typed records
 
 JSON is the canonical representation because it is unambiguous, available in every supported runtime, and works with JSON Schema-aware editors. Human-readable Markdown is generated from those records.

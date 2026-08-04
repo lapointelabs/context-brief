@@ -6,6 +6,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { validateConfig, validateTaskShape } from "../src/doctor.js";
 import { importGithubTask } from "../src/importers.js";
+import { mcpPlan } from "../src/mcp-setup.js";
 import { defaultConfig, initializeProject, loadProject } from "../src/project.js";
 import { matchesAny } from "../src/util.js";
 
@@ -63,4 +64,16 @@ test("imports a GitHub issue into the canonical task model", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("generates client-native MCP installation plans", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "context-brief-mcp-plan-"));
+  await initializeProject(directory, { name: "mcp-plan" });
+  const project = await loadProject(directory);
+  const codex = await mcpPlan(project, "codex");
+  assert.deepEqual(codex.args.slice(0, 4), ["mcp", "add", "context-brief-mcp-plan", "--"]);
+  const claude = await mcpPlan(project, "claude");
+  assert.deepEqual(claude.args.slice(0, 6), ["mcp", "add", "--scope", "project", "context-brief-mcp-plan", "--"]);
+  const cursor = await mcpPlan(project, "cursor");
+  assert.equal(path.relative(directory, cursor.filePath), path.join(".cursor", "mcp.json"));
 });

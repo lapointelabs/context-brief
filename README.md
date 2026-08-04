@@ -28,30 +28,44 @@ Markdown is now a compiled view, not the source of truth.
 
 ## Quick start
 
-From this checkout:
+Run without installing globally:
 
 ```sh
-npm link
+npx --yes @lapointelabs/context-brief start
+```
+
+Or install the CLI once:
+
+```sh
+npm install --global @lapointelabs/context-brief
 cd /path/to/your/project
-ctx init
-ctx task create upload-error --title "Explain rejected uploads before submission"
+ctx start
 ```
 
-Edit `.context/tasks/upload-error.json`, then attach evidence and compile it:
+`ctx start` detects the project, initializes `.context`, suggests existing verification commands, asks for the outcome and scope, selects an installed agent, validates the task, and produces the first compiled brief.
+
+For an unattended or issue-driven workflow:
 
 ```sh
-ctx evidence add upload-error \
-  --kind test-output \
-  --summary "The API rejects a 6.2 MB JPEG with HTTP 413." \
-  --file tmp/upload-failure.log \
-  --sensitivity internal
+ctx start upload-error \
+  --title "Explain rejected uploads before submission" \
+  --outcome "Oversized images are rejected before upload with a specific message." \
+  --target codex \
+  --yes
 
-ctx hydrate upload-error
-ctx doctor upload-error
-ctx build upload-error --target codex
+ctx start github:OWNER/REPOSITORY#42 --target codex --yes
 ```
 
-The compiled artifact is written to `.context/build/upload-error/codex.md`. Its adjacent manifest records task and configuration hashes, snapshot time, selected paths, attached evidence, validation counts, token use, and omitted sections.
+The compiled artifact is written to `.context/build/<task>/<target>.md`. Its adjacent manifest records task and configuration hashes, snapshot time, selected paths, attached evidence, validation counts, token use, and omitted sections.
+
+Connect the project to the selected client without manually editing configuration:
+
+```sh
+ctx mcp show codex       # preview the exact change
+ctx mcp install codex    # install through the Codex CLI
+```
+
+Use `ctx start --mcp` to perform MCP setup as part of the first run.
 
 Verification is deliberately a two-step operation:
 
@@ -65,25 +79,27 @@ ctx result scaffold upload-error
 
 ```text
 Task source ───────┐
-Repository ────────┼──> hydrate ──> doctor ──> build ──> agent
+Repository ────────┼──> start ──> hydrate ──> doctor ──> build ──> agent
 Runtime evidence ──┘                  │                    │
                                      └── refuses errors   └──> verify ──> result
 ```
 
-1. `init` installs local schemas and creates an isolated `.context` workspace.
-2. `task create` creates a typed task, or `task import` imports a GitHub issue.
-3. `evidence add` records a source with provenance and integrity metadata.
-4. `hydrate` takes a deterministic snapshot of relevant repository context.
-5. `doctor` validates the full input graph.
-6. `build` compiles a bounded target-specific Markdown artifact and manifest.
-7. An agent can use the artifact directly or query the same data over MCP.
-8. `verify --run` records actual command output; a result record maps delivery back to acceptance criteria.
+1. `start` auto-detects the repository and runs the complete first-use workflow.
+2. `init` remains available for explicit or automated setup and is safe to rerun.
+3. `task create` creates a typed task, or `task import` imports a GitHub issue.
+4. `evidence add` records a source with provenance and integrity metadata.
+5. `hydrate` takes a deterministic snapshot of relevant repository context.
+6. `doctor` validates the full input graph.
+7. `build` compiles a bounded target-specific Markdown artifact and manifest.
+8. An agent can use the artifact directly or query the same data over MCP.
+9. `verify --run` records actual command output; a result record maps delivery back to acceptance criteria.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `ctx init [directory]` | Create `.context`, configuration, and local editor schemas. |
+| `ctx start [ID or issue]` | Initialize, create/import, hydrate, validate, and compile in one guided command. |
+| `ctx init [directory]` | Detect the project, create `.context`, install schemas, and update `.gitignore`. |
 | `ctx task create ID` | Scaffold a typed task. |
 | `ctx task import github:OWNER/REPO#123` | Import a GitHub issue; uses `GITHUB_TOKEN` for private repositories. |
 | `ctx task list` / `show` | List or inspect canonical tasks. |
@@ -94,6 +110,8 @@ Runtime evidence ──┘                  │                    │
 | `ctx verify TASK` | Preview verification commands. Add `--run` to execute them. |
 | `ctx result scaffold TASK` | Create a typed completion record. |
 | `ctx result validate TASK` | Validate result shape and acceptance coverage. |
+| `ctx mcp show TARGET` | Preview client-specific MCP setup without changing configuration. |
+| `ctx mcp install TARGET` | Install MCP through the client CLI or a safe project-local merge. |
 | `ctx status` | Show tasks and lifecycle status. |
 | `ctx serve` | Run the MCP server on stdio. |
 
@@ -128,19 +146,13 @@ Context Brief never overwrites native instruction files. It references and snaps
 
 ## MCP
 
-Run `ctx serve` from a configured project and register it as a stdio MCP server in the client you use:
+MCP setup is client-aware:
 
-```json
-{
-  "mcpServers": {
-    "context-brief": {
-      "command": "ctx",
-      "args": ["serve"],
-      "cwd": "/absolute/path/to/project"
-    }
-  }
-}
-```
+- Codex setup uses `codex mcp add` and creates a project-specific server name.
+- Claude Code setup uses `claude mcp add --scope project`.
+- Cursor setup preserves existing entries while merging into `.cursor/mcp.json`.
+
+`ctx mcp show TARGET` previews the exact command or JSON merge. `ctx mcp install TARGET` applies it. Repeated installation is idempotent; use `--force` to replace an existing CLI registration.
 
 The server publishes task, evidence, and previously compiled artifacts as resources. It exposes read-oriented tools for listing tasks, getting typed tasks or evidence, compiling bounded context, and running `doctor`. Both newline and `Content-Length` stdio framing are accepted.
 
@@ -171,18 +183,19 @@ Generated snapshots, builds, runs, and results are ignored by this repository's 
 - Task verification commands are never run by `hydrate`, `doctor`, or `build`.
 - Verification commands require `ctx verify --run`; destructive-looking commands produce warnings.
 - Builds with validation errors are refused unless the caller explicitly supplies `--force`.
+- MCP configuration can be previewed before installation and preserves unrelated Cursor servers.
 
-See [the architecture](docs/architecture.md), [the artifact model](docs/artifact-model.md), and [the three context layers](docs/context-layers.md).
+See [installation and onboarding](docs/install.md), [the architecture](docs/architecture.md), [the artifact model](docs/artifact-model.md), and [the three context layers](docs/context-layers.md).
 
 ## Development
 
 ```sh
 npm run check
 npm test
-npm pack --dry-run
+npm run release:check
 ```
 
-The integration suite creates isolated projects and exercises schema installation, task creation, evidence hashing, discovery, validation, compilation, tamper detection, verification, result scaffolding, and MCP transport.
+The integration suite creates isolated projects and exercises one-command onboarding, project detection, idempotent initialization, schema installation, task creation, evidence hashing, discovery, validation, compilation, MCP configuration, tamper detection, verification, result scaffolding, and MCP transport.
 
 ## License
 
