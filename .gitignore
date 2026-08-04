@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+.context/build/
+.context/runs/
+.context/snapshots/
+.context/results/
+*.log

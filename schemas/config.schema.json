@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/lapointelabs/context-brief/main/schemas/config.schema.json",
+  "title": "Context Brief project configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "project", "discovery", "policies", "targets"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "root"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 }
+      }
+    },
+    "discovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["include", "exclude", "maxFileBytes", "maxFiles", "instructionFiles"],
+      "properties": {
+        "include": { "type": "array", "items": { "type": "string" } },
+        "exclude": { "type": "array", "items": { "type": "string" } },
+        "maxFileBytes": { "type": "integer", "minimum": 1024 },
+        "maxFiles": { "type": "integer", "minimum": 100 },
+        "instructionFiles": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "policies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tokenBudget", "evidenceMaxAgeDays", "failOnWarnings"],
+      "properties": {
+        "tokenBudget": { "type": "integer", "minimum": 1000 },
+        "evidenceMaxAgeDays": { "type": "integer", "minimum": 0 },
+        "failOnWarnings": { "type": "boolean" }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["codex", "claude", "cursor", "generic"] }
+    },
+    "integrations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "github": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository"],
+          "properties": {
+            "repository": { "type": "string", "pattern": "^[^/]+/[^/]+$" }
+          }
+        }
+      }
+    }
+  }
+}

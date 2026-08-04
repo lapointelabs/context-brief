@@ -1,0 +1,117 @@
+{
+  "$schema": "../schemas/task.schema.json",
+  "schemaVersion": 1,
+  "id": "upload-error",
+  "title": "Explain rejected image uploads before submission",
+  "status": "ready",
+  "outcome": "When a user selects an image larger than 5 MB, the settings screen explains the limit immediately and does not send the doomed upload request. Valid images continue through the existing flow unchanged.",
+  "why": "Users currently wait for a request the API will reject, and support received six reports this month.",
+  "behavior": {
+    "current": [
+      "Images above 5 MB enter the normal upload state.",
+      "The API returns HTTP 413 after the browser sends the file.",
+      "The UI displays a generic error."
+    ],
+    "expected": [
+      "Oversized images are rejected before submission with a specific limit message.",
+      "A valid selection after an invalid one clears the error and uploads normally."
+    ]
+  },
+  "evidence": [
+    "upload-413-report"
+  ],
+  "context": {
+    "entryPoints": [
+      "src/settings/avatar-form.tsx"
+    ],
+    "relatedPaths": [
+      "src/lib/upload-avatar.ts",
+      "src/api/avatar.ts",
+      "src/settings/avatar-form.test.tsx"
+    ],
+    "contracts": [
+      "POST /api/avatar",
+      "The server-side 5 MB limit remains authoritative."
+    ]
+  },
+  "scope": {
+    "in": [
+      "Client-side size validation on the profile settings avatar control.",
+      "Regression coverage for an oversized file."
+    ],
+    "out": [
+      "Image compression or resizing.",
+      "Other upload surfaces.",
+      "Changes to accepted file types."
+    ]
+  },
+  "constraints": [
+    "Keep the file input keyboard accessible.",
+    "Announce the message through the existing live region.",
+    "Do not add a dependency."
+  ],
+  "protectedPaths": [
+    "src/api/avatar.ts"
+  ],
+  "acceptance": [
+    {
+      "id": "AC-1",
+      "criterion": "Selecting a file above 5 MB shows the specific limit without making a request.",
+      "verification": "automated"
+    },
+    {
+      "id": "AC-2",
+      "criterion": "Selecting a valid file afterward clears the error and follows the normal upload path.",
+      "verification": "automated"
+    },
+    {
+      "id": "AC-3",
+      "criterion": "Keyboard and live-region behavior remain correct.",
+      "verification": "manual"
+    }
+  ],
+  "verification": {
+    "commands": [
+      {
+        "name": "focused avatar tests",
+        "run": "npm test -- avatar-form",
+        "timeoutSeconds": 120
+      },
+      {
+        "name": "typecheck",
+        "run": "npm run typecheck",
+        "timeoutSeconds": 180
+      },
+      {
+        "name": "lint",
+        "run": "npm run lint",
+        "timeoutSeconds": 180
+      }
+    ],
+    "manual": [
+      "Select a 6 MB JPEG and confirm the limit appears without a network request.",
+      "Select a 1 MB JPEG and confirm the error clears and upload succeeds.",
+      "Repeat with the keyboard and confirm the live region announces the error."
+    ]
+  },
+  "unknowns": [
+    {
+      "question": "Do the client and API already share a browser-safe size constant?",
+      "assumption": "The existing live region is the correct error surface.",
+      "stopWhen": "Satisfying the task requires changing the endpoint contract or importing server-only code into the client bundle."
+    }
+  ],
+  "delivery": {
+    "required": [
+      "Report the chosen source for the 5 MB value.",
+      "Identify the regression test added.",
+      "List every check actually run and its result.",
+      "Call out any remaining client/server mismatch risk."
+    ]
+  },
+  "source": {
+    "type": "manual",
+    "reference": "examples/upload-error-brief.md",
+    "importedAt": "2026-08-03T20:57:10.000Z"
+  }
+}

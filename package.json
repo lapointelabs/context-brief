@@ -1,0 +1,48 @@
+{
+  "name": "@lapointelabs/context-brief",
+  "version": "0.1.0",
+  "description": "A schema-backed context compiler for coding agents.",
+  "type": "module",
+  "bin": {
+    "ctx": "./bin/ctx.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "schemas",
+    "templates",
+    "docs",
+    "examples",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node scripts/check-syntax.js",
+    "test": "node --test",
+    "test:cli": "node --test test/cli.test.js",
+    "prepublishOnly": "npm run check && npm test"
+  },
+  "engines": {
+    "node": ">=20.1"
+  },
+  "keywords": [
+    "agents",
+    "context",
+    "codex",
+    "claude",
+    "cursor",
+    "mcp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lapointelabs/context-brief.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lapointelabs/context-brief/issues"
+  },
+  "homepage": "https://github.com/lapointelabs/context-brief#readme",
+  "license": "MIT"
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/lapointelabs/context-brief/main/schemas/result.schema.json",
+  "title": "Context Brief execution result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "task", "status", "summary", "changedFiles", "acceptance", "verificationRuns", "risks", "completedAt"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "task": { "type": "string" },
+    "status": { "enum": ["complete", "partial", "blocked"] },
+    "summary": { "type": "string" },
+    "changedFiles": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "acceptance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "evidence"],
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "enum": ["passed", "failed", "not-run"] },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "verificationRuns": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "completedAt": { "type": "string", "format": "date-time" }
+  }
+}

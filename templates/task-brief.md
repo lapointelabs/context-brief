@@ -1,5 +1,9 @@
 # Task brief: [short, outcome-oriented title]
 
+> This worksheet is a human drafting aid. The canonical executable format is
+> `.context/tasks/<id>.json`, created with `ctx task create`. Run `ctx doctor`
+> before compiling it for an agent.
+
 ## Outcome
 
 Describe the user or business outcome in one or two sentences. State what should be true when the work is finished, not merely which code should be written.

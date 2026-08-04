@@ -1,6 +1,7 @@
 # Project instructions
 
 Use this file for stable repository context. Keep task-specific details in a separate task brief.
+Context Brief discovers this file as a native instruction source; it does not generate or overwrite it.
 
 ## Product
 
@@ -54,3 +55,4 @@ Use this file for stable repository context. Keep task-specific details in a sep
 - State what changed and why.
 - List checks that actually ran; never imply an unrun check passed.
 - Call out assumptions, skipped checks, and remaining risk.
+- When a `.context` task is supplied, map the handoff to its acceptance IDs and reference the recorded verification run.

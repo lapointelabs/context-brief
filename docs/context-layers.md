@@ -56,3 +56,14 @@ When the output is wrong, diagnose the context layer before adding more prose:
 - Wrong diagnosis? Improve runtime evidence.
 
 More context is not always better. Better placement makes context reusable and easier to trust.
+
+## How the compiler preserves the layers
+
+Context Brief stores these layers independently:
+
+- native repository instructions remain in their client-specific files;
+- task intent lives in a schema-validated task record;
+- runtime evidence lives in provenance-tracked evidence records;
+- repository discovery lives in a disposable, hash-bound snapshot.
+
+`ctx build` joins them only for a particular task and target. This prevents one-time evidence from silently becoming a permanent project rule and lets freshness, sensitivity, and token policy be enforced during compilation.

@@ -17,7 +17,9 @@ An AI tool will often fill those gaps with a plausible implementation. Plausible
 
 ## The context brief
 
-See [`upload-error-brief.md`](upload-error-brief.md).
+See the original human worksheet in [`upload-error-brief.md`](upload-error-brief.md),
+the canonical typed task in [`upload-error.task.json`](upload-error.task.json), and
+its separate provenance record in [`upload-error.evidence.json`](upload-error.evidence.json).
 
 The revised brief adds only information that changes a decision:
 

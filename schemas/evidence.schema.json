@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/lapointelabs/context-brief/main/schemas/evidence.schema.json",
+  "title": "Context Brief evidence record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "task", "kind", "summary", "source", "capturedAt", "sensitivity"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "task": { "type": "string" },
+    "kind": { "enum": ["log", "screenshot", "trace", "test-output", "support-report", "request-response", "observation", "other"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "value"],
+      "properties": {
+        "type": { "enum": ["file", "url", "command", "manual"] },
+        "value": { "type": "string", "minLength": 1 }
+      }
+    },
+    "capturedAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sensitivity": { "enum": ["public", "internal", "confidential", "restricted"] },
+    "excerpt": { "type": "string" },
+    "redactions": { "type": "array", "items": { "type": "string" } }
+  }
+}

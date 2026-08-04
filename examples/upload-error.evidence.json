@@ -1,0 +1,17 @@
+{
+  "$schema": "../schemas/evidence.schema.json",
+  "schemaVersion": 1,
+  "id": "upload-413-report",
+  "task": "upload-error",
+  "kind": "support-report",
+  "summary": "Six reports describe profile-image uploads ending in a generic error; a 6.2 MB JPEG reproduces HTTP 413 in production and local development.",
+  "source": {
+    "type": "manual",
+    "value": "Redacted support summary and local reproduction"
+  },
+  "capturedAt": "2026-08-03T20:57:10.000Z",
+  "sensitivity": "internal",
+  "redactions": [
+    "Customer names and support ticket identifiers removed."
+  ]
+}
