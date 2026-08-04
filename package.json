@@ -1,10 +1,10 @@
 {
   "name": "@lapointelabs/context-brief",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A schema-backed context compiler for coding agents.",
   "type": "module",
   "bin": {
-    "ctx": "./bin/ctx.js"
+    "ctx": "bin/ctx.js"
   },
   "exports": {
     ".": "./src/index.js"
@@ -23,7 +23,7 @@
     "check": "node scripts/check-syntax.js",
     "test": "node --test",
     "test:cli": "node --test test/cli.test.js",
-    "release:check": "npm run check && npm test && npm pack --dry-run",
+    "release:check": "npm run check && npm test && npm publish --dry-run --ignore-scripts",
     "prepublishOnly": "npm run check && npm test"
   },
   "engines": {
