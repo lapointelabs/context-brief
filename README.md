@@ -1,6 +1,6 @@
-# Context Brief
+# Context template for Claude Code
 
-Context Brief is a schema-backed context compiler for coding agents. It turns a task, live repository structure, native project instructions, and provenance-tracked evidence into a validated, target-specific execution brief.
+A context template for Claude Code, Cursor, ChatGPT, and coding agents. Context Brief is a schema-backed context compiler that turns a task, live repository structure, native project instructions, and provenance-tracked evidence into a validated, target-specific execution brief for prompt engineering and context engineering workflows.
 
 It supports Codex, Claude Code, Cursor, generic repository-aware agents, and on-demand access over MCP. The CLI has no runtime dependencies beyond Node.js 20.1 or newer.
 

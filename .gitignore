@@ -5,3 +5,6 @@ coverage/
 .context/snapshots/
 .context/results/
 *.log
+
+# Tripwire scan artifacts
+.tripwire/

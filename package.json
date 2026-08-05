@@ -1,7 +1,7 @@
 {
   "name": "@lapointelabs/context-brief",
-  "version": "0.2.1",
-  "description": "A schema-backed context compiler for coding agents.",
+  "version": "0.2.2",
+  "description": "Context template for Claude Code, Cursor, ChatGPT, and coding agents — schema-backed context engineering briefs.",
   "type": "module",
   "bin": {
     "ctx": "bin/ctx.js"
@@ -31,11 +31,19 @@
   },
   "keywords": [
     "agents",
-    "context",
-    "codex",
+    "agent-templates",
     "claude",
+    "claude-code",
+    "cli",
+    "coding-agents",
+    "codex",
+    "context",
+    "context-engineering",
+    "context-template",
     "cursor",
-    "mcp"
+    "llm",
+    "mcp",
+    "prompt-engineering"
   ],
   "repository": {
     "type": "git",
