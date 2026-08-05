@@ -64,7 +64,7 @@ async function fixture() {
 
 test("prints a concise version for installation smoke checks", async () => {
   const result = await run(["--version"], packageRoot);
-  assert.match(result.stdout, /^0\.2\.1\n$/);
+  assert.match(result.stdout, /^0\.2\.2\n$/);
 });
 
 test("initializes a self-contained project with editor schemas", async () => {
